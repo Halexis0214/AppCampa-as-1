@@ -24,7 +24,6 @@ const backBtn = document.getElementById('backBtn');
 let canvas, currentLogoObject = null, watermarkObject = null, originalScaleRatio = 1;
 let currentCategory = 'all';
 
-// --- CONFIGURACIÓN DE PRECIOS Y CARRITO ---
 const PRICE_PER_CAMPAIGN = 20000; 
 const DISCOUNT_THRESHOLD = 3; 
 const DISCOUNT_PERCENTAGE = 0.20; 
@@ -32,18 +31,16 @@ const DISCOUNT_PERCENTAGE = 0.20;
 let shoppingCart = [];
 const cartView = document.getElementById('cart-view');
 const viewCartBtn = document.getElementById('viewCartBtn');
-const cartCount = document.getElementById('cartCount');
 const cartItemsContainer = document.getElementById('cartItemsContainer');
 const subtotalPrice = document.getElementById('subtotalPrice');
 const discountPrice = document.getElementById('discountPrice');
 const totalPrice = document.getElementById('totalPrice');
 
 // =========================================================
-// --- 1. GENERAR FILTROS AUTOMÁTICAMENTE ---
+// --- LÓGICA DE LA INTERFAZ ---
 // =========================================================
 function generateFilters() {
     filtersContainer.innerHTML = '';
-
     const btnAll = document.createElement('button');
     btnAll.className = 'filter-btn active';
     btnAll.innerText = 'Todas';
@@ -51,12 +48,10 @@ function generateFilters() {
     filtersContainer.appendChild(btnAll);
 
     const uniqueCategories = [...new Set(campaignsData.map(item => item.category))];
-
     uniqueCategories.forEach(cat => {
         const btn = document.createElement('button');
         btn.className = 'filter-btn';
         const cleanName = cat.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-        
         btn.innerText = cleanName;
         btn.onclick = () => updateCategory(cat, btn);
         filtersContainer.appendChild(btn);
@@ -70,9 +65,6 @@ function updateCategory(categoryName, btnElement) {
     renderGallery(); 
 }
 
-// =========================================================
-// --- 2. RENDERIZAR LA GALERÍA ---
-// =========================================================
 function renderGallery() {
     galleryContainer.innerHTML = '';
     const searchTerm = searchInput.value.toLowerCase().trim();
@@ -92,28 +84,17 @@ function renderGallery() {
         const card = document.createElement('div');
         card.className = 'campaign-card';
         card.onclick = () => openEditor(camp.src);
-
-        card.innerHTML = `
-            <img src="${camp.src}" alt="${camp.title}">
-            <div class="card-title">${camp.title}</div>
-        `;
+        card.innerHTML = `<img src="${camp.src}" alt="${camp.title}"><div class="card-title">${camp.title}</div>`;
         galleryContainer.appendChild(card);
     });
 }
 
 searchInput.addEventListener('input', renderGallery);
 
-// =========================================================
-// --- 3. CAMBIAR ENTRE VISTAS ---
-// =========================================================
 function openEditor(imageSrc) {
     catalogView.style.display = 'none';
     editorView.style.display = 'flex';
-    
-    if (!canvas) {
-        canvas = new fabric.Canvas('canvasEditor', { backgroundColor: '#fff' });
-    }
-    
+    if (!canvas) canvas = new fabric.Canvas('canvasEditor', { backgroundColor: '#fff' });
     loadCampaignToCanvas(imageSrc);
 }
 
@@ -125,31 +106,21 @@ backBtn.addEventListener('click', () => {
     watermarkObject = null;
 });
 
-// =========================================================
-// --- 4. LÓGICA DE FABRIC.JS (EDITOR VISUAL) ---
-// =========================================================
 function loadCampaignToCanvas(imageSrc) {
     fabric.Image.fromURL(imageSrc, function(img) {
         let MAX_SIZE = 550; 
-        if (window.innerWidth < 600) {
-            MAX_SIZE = window.innerWidth - 40; 
-        }
+        if (window.innerWidth < 600) MAX_SIZE = window.innerWidth - 40; 
         
         originalScaleRatio = 1; 
-
         if (img.width > MAX_SIZE || img.height > MAX_SIZE) {
             originalScaleRatio = Math.min(MAX_SIZE / img.width, MAX_SIZE / img.height);
         }
 
         canvas.setWidth(img.width * originalScaleRatio);
         canvas.setHeight(img.height * originalScaleRatio);
-
         canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), { 
-            scaleX: originalScaleRatio,
-            scaleY: originalScaleRatio,
-            crossOrigin: 'anonymous' 
+            scaleX: originalScaleRatio, scaleY: originalScaleRatio, crossOrigin: 'anonymous' 
         });
-        
         addWatermark();
     }, { crossOrigin: 'anonymous' });
 }
@@ -157,22 +128,13 @@ function loadCampaignToCanvas(imageSrc) {
 function addWatermark() {
     fabric.Image.fromURL('logo-impactar.png', function(wm) { 
         if (!wm) return;
-
         const scale = (canvas.width * 1.2) / wm.width;
-        
         wm.set({
-            originX: 'center',
-            originY: 'center',
-            left: canvas.width / 2, 
-            top: canvas.height / 2, 
-            scaleX: scale,
-            scaleY: scale,
-            angle: -35, 
-            opacity: 0.55, 
-            selectable: false, 
-            evented: false     
+            originX: 'center', originY: 'center',
+            left: canvas.width / 2, top: canvas.height / 2, 
+            scaleX: scale, scaleY: scale, angle: -35, opacity: 0.55, 
+            selectable: false, evented: false     
         });
-
         watermarkObject = wm;
         canvas.add(wm);
         canvas.bringToFront(wm);
@@ -183,26 +145,18 @@ function addWatermark() {
 document.getElementById('logoUpload').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = function(f) {
         fabric.Image.fromURL(f.target.result, function(img) {
             if (currentLogoObject) canvas.remove(currentLogoObject);
-
             img.set({
                 left: 50, top: 50, cornerColor: '#007bff',
                 cornerSize: 15, transparentCorners: false, borderColor: '#007bff'
             });
-
-            if (img.width > canvas.width * 0.3) {
-                img.scaleToWidth(canvas.width * 0.3);
-            }
-
+            if (img.width > canvas.width * 0.3) img.scaleToWidth(canvas.width * 0.3);
             currentLogoObject = img;
             canvas.add(img);
-            
             if (watermarkObject) canvas.bringToFront(watermarkObject);
-            
             canvas.setActiveObject(img);
             canvas.renderAll();
         });
@@ -211,7 +165,7 @@ document.getElementById('logoUpload').addEventListener('change', function(e) {
 });
 
 // =========================================================
-// --- 6. LÓGICA DEL CARRITO ---
+// --- LÓGICA DEL CARRITO ---
 // =========================================================
 const addToCartBtn = document.getElementById('addToCartBtn');
 if(addToCartBtn) {
@@ -250,9 +204,10 @@ if(addToCartBtn) {
 }
 
 function updateCartUI() {
-    cartCount.innerText = shoppingCart.length;
+    const cartCountEl = document.getElementById('cartCount');
+    if (cartCountEl) cartCountEl.innerText = shoppingCart.length;
+    
     viewCartBtn.style.display = shoppingCart.length > 0 ? 'inline-block' : 'none';
-
     cartItemsContainer.innerHTML = '';
     const promoMsg = document.getElementById('dynamicPromoMessage');
 
@@ -293,11 +248,7 @@ function updateCartUI() {
 
     let subtotal = shoppingCart.length * PRICE_PER_CAMPAIGN;
     let discount = 0;
-
-    if (shoppingCart.length >= DISCOUNT_THRESHOLD) {
-        discount = subtotal * DISCOUNT_PERCENTAGE;
-    }
-
+    if (shoppingCart.length >= DISCOUNT_THRESHOLD) discount = subtotal * DISCOUNT_PERCENTAGE;
     let finalTotal = subtotal - discount;
 
     subtotalPrice.innerText = `$${subtotal.toLocaleString()}`;
@@ -320,17 +271,13 @@ document.getElementById('backFromCartBtn').addEventListener('click', () => {
     catalogView.style.display = 'block';
 });
 
-// Iniciar la app
 generateFilters();
 renderGallery();
 
 // =========================================================
 // --- ESCUDO ANTI-ROBO ---
 // =========================================================
-document.addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-});
-
+document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
 document.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p' || e.key === 'S' || e.key === 'P')) {
         e.preventDefault();
@@ -339,7 +286,7 @@ document.addEventListener('keydown', function(e) {
 });
 
 // =========================================================
-// --- LÓGICA VISUAL DEL CUPÓN DE DESCUENTO ---
+// --- LÓGICA VISUAL DEL CUPÓN ---
 // =========================================================
 const applyCouponBtn = document.getElementById('applyCouponBtn');
 const couponMessage = document.getElementById('couponMessage');
@@ -351,7 +298,7 @@ if (applyCouponBtn) {
         if (cuponInput === "IMPACTANDOHOGARES") {
             couponMessage.style.display = "block";
             couponMessage.style.color = "#00a650"; 
-            couponMessage.innerHTML = "✅ ¡Cupón aplicado exitosamente! Se te cobrará con tarifa especial de aliado en el siguiente paso.";
+            couponMessage.innerHTML = "✅ ¡Cupón aplicado exitosamente! Se te cobrará con tarifa especial de aliado.";
         } else if (cuponInput === "") {
             couponMessage.style.display = "block";
             couponMessage.style.color = "#f29d00"; 
@@ -365,7 +312,7 @@ if (applyCouponBtn) {
 }
 
 // =========================================================
-// --- 9. PROCESO DE COMPRA (CORREO, CUPÓN Y MERCADOPAGO) ---
+// --- PROCESO DE COMPRA ---
 // =========================================================
 const checkoutBtn = document.getElementById('checkoutBtn');
 
@@ -387,7 +334,6 @@ if (checkoutBtn) {
 
         const cuponInput = document.getElementById('discountCode').value.trim().toUpperCase();
         
-        // --- AQUÍ PEGAS TUS 15 LINKS NORMALES ---
         const linksNormales = {
             1: "https://mpago.li/154bvKx",
             2: "https://mpago.li/2W9cRQ2",
@@ -406,7 +352,6 @@ if (checkoutBtn) {
             15: "AQUI_TU_LINK_NORMAL_15"
         };
 
-        // --- AQUÍ PEGAS TUS 15 LINKS DE ALIADO (MÁS BARATOS) ---
         const linksAliados = {
             1: "https://mpago.li/2tBfe21",
             2: "https://mpago.li/2nciCbr",
