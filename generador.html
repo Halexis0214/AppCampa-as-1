@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Generador de Base de Datos</title>
+    <style>
+        body { font-family: sans-serif; padding: 40px; background: #f4f7f6; }
+        .box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto; }
+        textarea { width: 100%; height: 300px; margin-top: 15px; font-family: monospace; font-size: 14px; }
+        input[type="file"] { border: 2px dashed #007bff; padding: 20px; width: 100%; box-sizing: border-box; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>⚡ Generador Automático de Campañas</h2>
+    <p>1. Asegúrate de que tus imágenes se llamen: <b>categoria-Titulo.jpg</b></p>
+    <p>2. Selecciona todas tus imágenes a la vez (Ctrl+E):</p>
+    
+    <input type="file" id="fileInput" multiple accept="image/*">
+    
+    <p>3. Copia el código generado aquí abajo y pégalo en las primeras líneas de tu archivo <b>script.js</b>:</p>
+    <textarea id="outputCode" placeholder="Aquí aparecerá tu código mágico..."></textarea>
+</div>
+
+<script>
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const files = e.target.files;
+        if (files.length === 0) return;
+
+        let jsCode = "const campaignsData = [\n";
+        
+        for (let i = 0; i < files.length; i++) {
+            let fileName = files[i].name; // Ej: "mascotas-Recoge la basura.jpg"
+            let cleanName = fileName.substring(0, fileName.lastIndexOf('.')); // Quita el .jpg o .png
+            
+            // Separar categoría y título usando el guion "-"
+            let parts = cleanName.split('-');
+            
+            let category = "general";
+            let title = cleanName;
+
+            if (parts.length > 1) {
+                category = parts[0].trim().toLowerCase().replace(/\s+/g, '-'); // Quita espacios de la categoría
+                // Une el resto del nombre por si tenía más guiones
+                title = parts.slice(1).join('-').trim(); 
+            }
+
+            jsCode += `    { id: ${i + 1}, title: "${title}", category: "${category}", src: "campañas/${fileName}" }`;
+            
+            // Poner coma a todos menos al último
+            if (i < files.length - 1) jsCode += ",\n"; 
+            else jsCode += "\n";
+        }
+        
+        jsCode += "];";
+        
+        document.getElementById('outputCode').value = jsCode;
+    });
+</script>
+
+</body>
+</html>
