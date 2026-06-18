@@ -165,7 +165,7 @@ document.getElementById('logoUpload').addEventListener('change', function(e) {
 });
 
 // =========================================================
-// --- 6. LÓGICA DEL CARRITO (AHORA EXPORTA IMAGEN LIMPIA) ---
+// --- LÓGICA DEL CARRITO (AHORA EXPORTA IMAGEN LIMPIA) ---
 // =========================================================
 const addToCartBtn = document.getElementById('addToCartBtn');
 if(addToCartBtn) {
@@ -315,6 +315,10 @@ if (applyCouponBtn) {
             couponMessage.style.display = "block";
             couponMessage.style.color = "#00a650"; 
             couponMessage.innerHTML = "✅ ¡Cupón aplicado exitosamente! Se te cobrará con tarifa especial de aliado.";
+        } else if (cuponInput === "PRUEBAMAKE") {
+            couponMessage.style.display = "block";
+            couponMessage.style.color = "#0056b3"; 
+            couponMessage.innerHTML = "🚀 ¡Modo de simulación activado! Los archivos se enviarán gratis a Make.";
         } else if (cuponInput === "") {
             couponMessage.style.display = "block";
             couponMessage.style.color = "#f29d00"; 
@@ -328,7 +332,7 @@ if (applyCouponBtn) {
 }
 
 // =========================================================
-// --- 9. PROCESO DE COMPRA (CONEXIÓN A MAKE.COM) ---
+// --- PROCESO DE COMPRA (CONEXIÓN A MAKE.COM MODIFICADA) ---
 // =========================================================
 const checkoutBtn = document.getElementById('checkoutBtn');
 
@@ -387,8 +391,11 @@ if (checkoutBtn) {
         };
 
         let linkDePago = "";
+        let esPruebaMake = false;
 
-        if (cuponInput === "IMPACTANDOHOGARES") { 
+        if (cuponInput === "PRUEBAMAKE") {
+            esPruebaMake = true;
+        } else if (cuponInput === "IMPACTANDOHOGARES") { 
             linkDePago = linksAliados[cantidad];
         } else if (cuponInput === "") {
             linkDePago = linksNormales[cantidad];
@@ -398,7 +405,7 @@ if (checkoutBtn) {
             return;
         }
 
-        if (!linkDePago) {
+        if (!esPruebaMake && !linkDePago) {
             alert("¡Wow! Estás llevando más de 15 campañas. Te redirigiremos a nuestro WhatsApp para darte una atención corporativa personalizada.");
             window.open(`https://wa.me/573000000000?text=Hola,%20quiero%20comprar%20${cantidad}%20campañas%20en%20Impactarco.`, '_blank');
             return;
@@ -418,17 +425,24 @@ if (checkoutBtn) {
         // --- ENVIAMOS EL PAQUETE AL ROBOT DE MAKE ---
         fetch("https://hook.us2.make.com/h4tv65qzhjgckc1f25cf01z2sfavb6cd", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(orderData)
         })
         .then(response => {
-            // Cuando Make avisa que recibió el paquete, mandamos al cliente a pagar
-            window.location.href = linkDePago;
+            if (esPruebaMake) {
+                checkoutBtn.innerHTML = "¡Prueba enviada con éxito! ✅";
+                checkoutBtn.style.backgroundColor = "#28a745";
+                alert("🚀 ¡Datos enviados a Make! Revisa tu flujo para ver la simulación.");
+            } else {
+                window.location.href = linkDePago;
+            }
         })
         .catch(error => {
             console.error("Error conectando con Make:", error);
-            // Si falla el internet, de todos modos lo mandamos a pagar
-            window.location.href = linkDePago;
+            if (esPruebaMake) {
+                alert("❌ Hubo un problema al conectar con Make durante la prueba.");
+            } else {
+                window.location.href = linkDePago;
+            }
         });
     });
 }
